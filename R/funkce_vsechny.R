@@ -639,7 +639,7 @@ vahy_prehled <- function (df,names,w = 1) {
 
   for( i in names) {
     n_temp <- df %>% filter(!is.na(!!as.symbol(i))) %>% summarise(sum(w)) %>% as.numeric()
-    temp <- df %>% group_by(!!as.symbol(i)) %>% summarise(pocet_ve_vzorku = n(), podil_ve_vzorku = pocet_ve_vzorku/n_temp)
+    temp <- df %>% group_by(!!as.symbol(i)) %>% summarise(pocet_ve_vzorku =sum(w), podil_ve_vzorku = pocet_ve_vzorku/n_temp)
     colnames(temp)[1] <- "skupina"
     temp <- temp %>% mutate(promenna = i,
                             nazev = to_factor(skupina, levels = "labels"),
