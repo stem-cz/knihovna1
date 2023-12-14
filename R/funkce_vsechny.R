@@ -35,8 +35,6 @@ f_krizeni <- function (df, vektor_radek, vektor_sloupec, w = "w", jmeno_souboru 
 
   long_data_base <- pivot_longer(df,all_of(vektor_radek),names_to = "otazka",values_to = "odpovedi")
 
-  # long_data_base <<- long_data_base
-
   # Celkový počet odpovědí na otázku pro všechny zvolené otázky
 
   vahy_otazek <- long_data_base %>% filter(odpovedi != is.na(odpovedi) & odpovedi != "sys_filtered_off" & odpovedi != "sys_empty") %>% group_by(otazka)  %>% summarise(vaha_otazka = sum(w)) #round
@@ -44,9 +42,6 @@ f_krizeni <- function (df, vektor_radek, vektor_sloupec, w = "w", jmeno_souboru 
   # Počet odpovědí na jednotlivé varianty odpovědí pro všechny zvolené otázky
 
   long_data <- long_data_base %>% filter(odpovedi != is.na(odpovedi) & odpovedi != "sys_filtered_off" & odpovedi != "sys_empty") %>% group_by(otazka,odpovedi) %>% summarise(w = sum(w))
-
-
-  # long_data <<- long_data
 
   #Tvorba df se zněním otázek
 
@@ -68,6 +63,10 @@ f_krizeni <- function (df, vektor_radek, vektor_sloupec, w = "w", jmeno_souboru 
   long_data <- long_data %>% mutate(procenta =round(w/vaha_otazka*100,1))
 
   long_data <<- long_data
+
+  # tvorba df pro absolutní počty
+
+  abs_count <- tibble(otazka = vektor_radek)
 
   #---------------------------------------------Zpracování proměnných pro sloupce----------------------------------------------------------------
 
@@ -160,6 +159,11 @@ f_krizeni <- function (df, vektor_radek, vektor_sloupec, w = "w", jmeno_souboru 
 
     pocet_radek <- pocet_radek %>% rbind(krizeni_radek) #celkový počet napříč cykly
 
+    #aboslutní počty
+    krizeni_count <- krizeni %>% arrange(!!as.symbol(name)) %>% pivot_wider(names_from = name,names_prefix = sprintf("%s_", name), names_glue = , values_from = r, values_fill = 0) %>% group_by(otazka) %>% summarise(across(starts_with(name),~round(sum(.x))))
+
+    abs_count <- abs_count %>% left_join(krizeni_count, by = "otazka")
+
 
     krizeni <- krizeni %>% select(-r,-vaha_skupina)
 
@@ -209,7 +213,9 @@ f_krizeni <- function (df, vektor_radek, vektor_sloupec, w = "w", jmeno_souboru 
     }
 
     else {
-      temp <<- insertRows(temp, (1 + ind0 + add + nrow(filter(temp,otazka== a))), new = c(a,rep(NA,5), filter(pocet_radek, pocet_radek$otazka == a)$vaha_skupina))
+      # temp <<- insertRows(temp, (1 + ind0 + add + nrow(filter(temp,otazka== a))), new = c(a,rep(NA,5), filter(pocet_radek, pocet_radek$otazka == a)$vaha_skupina))
+
+      temp <<- insertRows(temp, (1 + ind0 + add + nrow(filter(temp,otazka== a))), new = c(a,rep(NA,5), select(filter(abs_count, abs_count$otazka == a),-otazka)))
 
       temp2 <<- insertRows(temp2, (1 + ind0 + add +nrow(filter(temp2,otazka== a))), new = c(a,rep(NA,5+length(krizeni_radek$vaha_skupina))))
 
@@ -631,7 +637,7 @@ vahy <- function (df,names,w = 1, tab = NULL) {
 #' @export
 #'
 #' @examples vahy_prehled(data,names =c("el21","vol21","vzd","poh"))
-vahy_prehled <- function (df,names,w = 1) {
+vahy_prehled <- function (df,names,w = 1, jmeno_souboru = "rozlozeni_vzorku.xlsx") {
 
   df <- df %>% mutate(w = as.numeric(w))
 
@@ -654,7 +660,7 @@ vahy_prehled <- function (df,names,w = 1) {
 
   rozlozeni_vzorku <<-tib
 
-  write.xlsx(tib, "rozlozeni_vzorku.xlsx")
+  write.xlsx(tib, jmeno_souboru)
 }
 
 
