@@ -537,8 +537,8 @@ f_KPMG <- function (df, tab = NULL, w = "w") {
 #' @examples dataX <- vahy(data3,names =c("el21","vol21"), tab = c("poh","el21","vol21"))
 vahy <- function (df,names,w = 1, tab = NULL) {
 
-
-  df <- df %>% mutate(w = as.numeric(w))
+  if (str_detect(w,"^[0-9]*.?,?[0-9]*$")) df <- df %>% mutate(w = as.numeric(w))
+  else  df <- df %>% mutate(w = eval(as.symbol(w)))
 
   guide <- read.xlsx("vahy.xlsx",1, colIndex = c(1:9))
 
